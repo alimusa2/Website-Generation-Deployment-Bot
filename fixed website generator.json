@@ -1,0 +1,633 @@
+{
+  "name": "fixed website generator",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Website generator",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Industry Niche",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Competitor Urls",
+              "fieldType": "textarea",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Business Name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Brand Personality Adjectives (2-3)",
+              "fieldType": "textarea",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Primary Color Palette (e.g any colour theme)",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "services",
+              "fieldType": "textarea",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "contact info (number , email , fb etc)",
+              "fieldType": "textarea",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Additional details ( more about brand , address other info etc)",
+              "fieldType": "textarea"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        -672,
+        -96
+      ],
+      "id": "048c995e-e37c-41a2-b262-6da1c303c248",
+      "name": "On form submission",
+      "webhookId": "508aca3d-24df-44e2-95c9-ecaf686d36bc"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "58d27717-cfe1-46ac-9b87-10cf4bb3d512",
+              "name": "industry niche",
+              "value": "={{ $json['Industry Niche'] }}",
+              "type": "string"
+            },
+            {
+              "id": "0bfac96c-4878-44e6-847e-87b7f1988484",
+              "name": "Competitor urls",
+              "value": "={{ $json[\"Competitor Urls\"].replace(/\\r?\\n|\\r/g, \", \") }}",
+              "type": "string"
+            },
+            {
+              "id": "10f176e1-9657-49e0-b75d-4733c745b940",
+              "name": "Business name",
+              "value": "={{ $json['Business Name'] }}",
+              "type": "string"
+            },
+            {
+              "id": "7a458a69-7ff7-410d-a817-23bb9a3d710d",
+              "name": "Brand adjectives",
+              "value": "={{ $json['Brand Personality Adjectives (2-3)'] }}",
+              "type": "string"
+            },
+            {
+              "id": "5ffb3002-1c9c-4058-b072-82d23871482d",
+              "name": "color palette",
+              "value": "={{ $json['Primary Color Palette (e.g any colour theme)'] }}",
+              "type": "string"
+            },
+            {
+              "id": "ef799beb-1e50-410e-8a32-cad305c4a343",
+              "name": "services",
+              "value": "={{ $json.services }}",
+              "type": "string"
+            },
+            {
+              "id": "f2c4ecc9-835f-4f75-a9a6-69010aedbb22",
+              "name": "contact info",
+              "value": "={{ $json[\"contact info (number , email , fb etc)\"].replace(/\\r?\\n|\\r/g, \", \") }}",
+              "type": "string"
+            },
+            {
+              "id": "000d4fe1-fae5-4d5b-a4dc-0785f94b133c",
+              "name": "Additional info",
+              "value": "={{ $json['Additional details ( more about brand , address other info etc)'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -448,
+        -96
+      ],
+      "id": "f5836984-9112-4db9-b427-154044c737a6",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ca650083-f05a-4fc9-b852-c568db716c90",
+              "name": "text",
+              "value": "={{ $json.candidates[0].content.parts[0].text\n.replace(/```html|```/g,'')\n.replace(/\\\\n/g,'\\n')\n.trim() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        128,
+        -96
+      ],
+      "id": "357e1873-6578-4c89-937d-d176ba12c904",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Safely get HTML from input\nconst html =$input.first().json.text  || '';\n\n// Match <img> tags with src, case-insensitive, single/double quotes allowed\nconst matches = [...html.matchAll(/<img[^>]+src=['\"]?([^'\">\\s]+)['\"]?/gi)];\n\nif (matches.length === 0) {\n  return [{ json: { imageUrl: null } }];\n}\n\n// Return image URLs\nreturn matches.map(m => ({ json: { imageUrl: m[1] } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        -96
+      ],
+      "id": "d36dbd0d-ef0e-4883-bb12-e10eda6cce8d",
+      "name": "image urls",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash-lite",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash-lite"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an elite web developer, UI/UX designer, and SEO strategist.\n\nYour task is to generate ONE complete, production-quality, fully responsive single-file HTML website.\n\nBusiness Name: {{ $json[\"Business name\"] }}\nIndustry / Niche: {{ $json[\"industry niche\"] }}\nServices: {{ $json[\"services\"] }}\nBrand Personality: {{ $json[\"Brand adjectives\"] }}\nPrimary Brand Color: {{ $json[\"color palette\"] }}\nContact Information: {{ $json[\"contact info\"] }}\nFounders / Background: {{ $json[\"Additional info\"] }}\nCompetitor URLs: {{ $json['Competitor urls'] }}\n\nMANDATORY RULES — YOU MUST FOLLOW ALL OF THEM EXACTLY:\n\n1. Return ONLY the complete HTML code inside ```html ... ```. No explanations, no comments, no markdown outside the code block.\n\n2. EVERY SINGLE IMAGE MUST USE ONLY THESE EXACT, VERIFIED WORKING UNSPLASH / PEXELS IDs. DO NOT USE ANY OTHER IDs OR URLs. If an ID is not in this list → DO NOT USE IT.\n\n   Allowed Unsplash photo IDs (use full photo-XXXXXXXX-YYYYYYYYYYYY format):\n   - photo-1504813184599-115427e7f206\n   - photo-1522202176988-66273c2fd55f\n   - photo-1551288049-bebda4e38f71\n   - photo-1519389950473-47ba0277781c\n   - photo-1486312128473-e90b74357835\n   - photo-1504384354674-90964048f484\n\n   Allowed Pexels photo IDs (use full pexels-photo-ID format):\n   - 3184291\n   - 3183150\n   - 3184292\n   - 3183164\n\n   URL formats you MUST use (no variations):\n   Unsplash: https://images.unsplash.com/photo-XXXXXXXX-YYYYYYYYYYYY?fm=webp&w=WIDTH&h=HEIGHT&fit=crop\n   Pexels:   https://images.pexels.com/photos/ID/pexels-photo-ID.jpeg?auto=compress&cs=tinysrgb&w=WIDTH&h=HEIGHT&fit=crop\n\n   Every <img> MUST have:\n   - correct width + height attributes\n   - loading=\"eager\" only on hero image, loading=\"lazy\" everywhere else\n   - decoding=\"async\"\n   - descriptive, relevant alt text\n   - srcset + sizes for responsive behavior\n\n3. LOGO: Use ONLY this clean inline SVG hat logo (do NOT use emoji or base64 images):\n   <svg width=\"40\" height=\"40\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n     <path d=\"M3 8L12 3L21 8\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linejoin=\"round\"/>\n     <path d=\"M12 13V21\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linejoin=\"round\"/>\n     <path d=\"M7 8.5V15C7 17 9 19 12 19C15 19 17 17 17 15V8.5\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linejoin=\"round\"/>\n   </svg>\n\n   Place it beside the business name in a professional way.\n\n4. CONTACT FORM MUST WORK:\n   - Use Web3Forms: action=\"https://api.web3forms.com/submit\"\n   - Include: <input type=\"hidden\" name=\"access_key\" value=\"YOUR_ACCESS_KEY_HERE\">\n   - Add JavaScript that shows loading spinner, success message (green), error message (red), resets form on success\n   - Disable button during submit\n   - Show clear feedback visible to user\n\n5. ACCESSIBILITY & QUALITY MUST BE HIGH:\n   - Semantic HTML: <header>, <main>, <section>, <footer>, <nav>\n   - Proper ARIA labels, roles, aria-expanded, aria-hidden\n   - Visible focus styles (focus-visible)\n   - Keyboard trap in mobile menu + Escape to close\n   - High contrast (WCAG AA minimum)\n   - Smooth scroll: html { scroll-behavior: smooth; }\n\n6. STRUCTURE (minimum 10 sections — follow this order):\n   1. Sticky glassmorphism navbar (logo + links + CTA button + mobile hamburger)\n   2. Hero section (strong H1 + CTA buttons)\n   3. About section\n   4. Services / Fragrances section (grid of cards)\n   5. Why Choose Us section\n   6. Portfolio / Collection section\n   7. Testimonials section (carousel or grid)\n   8. Process / How We Work section\n   9. Final big CTA banner\n   10. Contact section (working form)\n   11. Footer (trust badges, copyright, quick links)\n\n7. DESIGN & TECH:\n   - Tailwind CDN + Google Fonts (Montserrat, Poppins, Inter) with display=swap\n   - Use primary brand color from data\n   - Glassmorphism cards, hover lift effects, smooth transitions\n   - Full meta tags + Open Graph + Twitter cards + JSON-LD LocalBusiness\n   - No broken links, no invalid image URLs\n\nAnalyze competitors first (simulate if needed) and make this version clearly superior in design, trust signals, conversion focus, and mobile experience.\n\nNow generate the complete HTML — follow every rule strictly."
+            }
+          ]
+        },
+        "simplify": false,
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -224,
+        -96
+      ],
+      "id": "08ef98bf-518c-4b31-9990-de7818b2a4ce",
+      "name": "website generator",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "HimX1bC2itFyy35S",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "HEAD",
+        "url": "={{ $json.imageUrl }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        576,
+        -96
+      ],
+      "id": "5ab9e8ee-02a3-42bb-b73e-b4ce66079531",
+      "name": "downloader1",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2481a462-a192-4abd-8be7-2f39a1a10ffc",
+              "leftValue": "={{ $json.error.message }}",
+              "rightValue": "404",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        800,
+        -96
+      ],
+      "id": "bf7562ad-4230-41a6-95f9-c854203e8331",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.unsplash.com/search/photos",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ $json.serviceNiche }}"
+            },
+            {
+              "name": "per_page",
+              "value": "20"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Client-ID JRHtL2n-XmpUiOa4MmJmq8yuLx4cLD6K36P6qtD98uQ"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1248,
+        -96
+      ],
+      "id": "88b10118-d06f-4ebf-8ac2-37fe7b5ee20f",
+      "name": "releavant images",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get data from form submission node\n// CHANGE THIS PATH to match your form node's output\nconst formData = items[0].json;\n\n// Try different possible field names\nconst brandName = $('On form submission').first().json['Industry Niche'] ;\n\nconst serviceNiche = $('On form submission').first().json.services ;\n\n// Combine brand + service for better search\nlet searchTerm = '';\nif (brandName && serviceNiche) {\n  searchTerm = `${brandName} ${serviceNiche}`;\n} else {\n  searchTerm = brandName || serviceNiche || 'business';\n}\n\n// Clean up the search term\nsearchTerm = searchTerm.trim().substring(0, 50);\n\nreturn [{\n  json: {\n    searchTerm: searchTerm,\n    brandName: brandName,\n    serviceNiche: serviceNiche\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        -96
+      ],
+      "id": "51aeb392-b5f9-450a-b0fc-ff405a856478",
+      "name": "image urls1",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get new images\nconst newImages = items.map(item => item.json.imageUrl || item.json.url).filter(url => url);\n\n// Get HTML\nlet html = $('Edit Fields1').first().json.text;\n\n// BLOW AWAY EVERYTHING AND START FRESH\n// Create a completely new HTML with the same structure but new images\n\n// Extract the body content roughly\nconst bodyMatch = html.match(/<body[^>]*>([\\s\\S]*)<\\/body>/i);\nlet bodyContent = bodyMatch ? bodyMatch[1] : html;\n\n// Replace all img tags in the body content with new ones\nlet imgIndex = 0;\nbodyContent = bodyContent.replace(/<img[^>]*>/g, () => {\n  if (imgIndex < newImages.length) {\n    return `<img src=\"${newImages[imgIndex++]}\" alt=\"Product image\" style=\"max-width:100%;\">`;\n  }\n  return '<img src=\"https://images.unsplash.com/photo-1523293182086-7651a899d37f\" alt=\"Fallback\">';\n});\n\n// Reconstruct HTML\nconst finalHtml = html.replace(/<body[^>]*>[\\s\\S]*<\\/body>/i, `<body>${bodyContent}</body>`);\n\nreturn [{\n  json: {\n    html: finalHtml\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1696,
+        -96
+      ],
+      "id": "a0952224-1a90-43db-8cfe-99caa0450b14",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get Unsplash response\nconst data = items[0].json;\n\n// Check if we have results\nif (!data.results || data.results.length === 0) {\n  console.log('No results found, using fallbacks');\n  // Use fallback images\n  const fallbacks = [\n    'https://images.unsplash.com/photo-1523293182086-7651a899d37f',\n    'https://images.unsplash.com/photo-1594035910387-fea47794261f',\n    'https://images.unsplash.com/photo-1541643600914-78b084683601',\n    'https://images.unsplash.com/photo-1547887537-6158d64c35b3',\n    'https://images.unsplash.com/photo-1547887537-8959be2a4e3a'\n  ];\n  \n  return fallbacks.map(url => ({\n    json: { imageUrl: url }\n  }));\n}\n\n// Extract URLs from results\nconst images = data.results.map(result => ({\n  json: {\n    imageUrl: result.urls?.regular || result.urls?.small\n  }\n}));\n\nconsole.log('Got', images.length, 'images from Unsplash');\nreturn images;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1472,
+        -96
+      ],
+      "id": "783a93f6-92bc-4cf3-98b7-a06adb6733dd",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "operation": "compress",
+        "fileName": "site.zip"
+      },
+      "type": "n8n-nodes-base.compression",
+      "typeVersion": 1.1,
+      "position": [
+        2368,
+        -96
+      ],
+      "id": "49fb3468-d8af-43db-bb8d-3dbea99eb7ac",
+      "name": "Compression"
+    },
+    {
+      "parameters": {
+        "jsCode": "const html = $input.first().json.html ;\n\nconst minified = html\n.replace(/\\n/g,'')\n.replace(/\\s+/g,' ')\n.trim();\n\nreturn [\n{\njson:{\nhtml:minified\n}\n}\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        -96
+      ],
+      "id": "a694adfe-e910-489c-802b-01c90091e1c1",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "owner": {
+          "__rl": true,
+          "value": "alimusa2",
+          "mode": "name"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "my_websites",
+          "mode": "list",
+          "cachedResultName": "my_websites",
+          "cachedResultUrl": "https://github.com/alimusa2/my_websites"
+        },
+        "filePath": "={{ $json.fileName }}",
+        "fileContent": "={{ $json.fileContent }}",
+        "commitMessage": "Deploy website via n8n",
+        "additionalParameters": {
+          "branch": {
+            "branch": "main"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        2816,
+        -96
+      ],
+      "id": "1207c4d1-97d3-49f0-b756-63d5af301758",
+      "name": "Create a file",
+      "webhookId": "019a0844-001c-493b-ba46-e9057f6d388d",
+      "credentials": {
+        "githubApi": {
+          "id": "wteem5FwJ8LQkhPj",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the HTML from the CORRECT source\n// CHANGE THIS PATH to point to your HTML Replacement node\nconst sourceHtml = $('Code in JavaScript1').first().json.html || \n                   '';\n\n// CRITICAL: Ensure HTML is a string and preserve formatting\nlet finalHtml = String(sourceHtml);\n\n// If HTML is escaped (has \\n showing as text), fix it\nif (finalHtml.includes('\\\\n')) {\n    finalHtml = finalHtml.replace(/\\\\n/g, '\\n');\n}\n\n// If HTML is minified but we want pretty formatting, \n// add line breaks after certain tags (optional)\n// finalHtml = finalHtml.replace(/>/g, '>\\n');\n\nconsole.log('Final HTML length:', finalHtml.length);\nconsole.log('Sample (first 500):\\n', finalHtml.substring(0, 500));\n\n// Count images to verify\nconst imgCount = (finalHtml.match(/<img/g) || []).length;\nconsole.log('Image count in HTML:', imgCount);\n\n// Check if Unsplash URLs are present\nconst hasUnsplash = finalHtml.includes('unsplash.com');\nconsole.log('Contains Unsplash URLs?', hasUnsplash);\n\n// Return properly formatted HTML\nreturn [{\n  json: {\n    fileName: items[0].json.fileName || 'website.html',\n    fileContent: finalHtml,  // This now has proper formatting\n    businessName: items[0].json.businessName,\n    debug: {\n      length: finalHtml.length,\n      imgCount: imgCount,\n      hasUnsplash: hasUnsplash\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2592,
+        -96
+      ],
+      "id": "45f82f60-4c77-4c7a-8928-5910ab65c0d0",
+      "name": "Code in JavaScript4"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the filename from previous node\nconst fileName =$input.first().json.content.name || 'website.html';\n\n// Your GitHub username - CHANGE THIS\nconst username = 'alimusa2';\n\n// Your repository name - CHANGE THIS if different\nconst repoName = 'my_websites';\n\n// Construct the live GitHub Pages URL\nconst liveUrl = `https://${username}.github.io/${repoName}/${fileName}`;\n\nconsole.log('Live URL:', liveUrl);\n\nreturn [{\n  json: {\n    ...items[0].json,\n    liveUrl: liveUrl,\n    message: 'Website deployed successfully!'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3040,
+        -96
+      ],
+      "id": "22337971-39c4-4242-a3e3-183ae075073b",
+      "name": "Code in JavaScript5"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the HTML content from your previous node\nconst htmlContent = items[0].json.html;\n\n// Get the business/brand name from form submission\n// Adjust this path based on where your form data is stored\nconst businessName = $('On form submission').first().json['Business Name'] ;\n\n// Clean the business name for filename (remove spaces, special chars)\nconst cleanName = businessName.toLowerCase()\n                              .replace(/[^a-z0-9]/g, '-')\n                              .replace(/--+/g, '-')\n                              .replace(/^-|-$/g, '');\n\n// Create unique filename with timestamp\nconst timestamp = Date.now();\nconst fileName = `${cleanName}-${timestamp}.html`;\n\nconsole.log('Generated filename:', fileName);\n\n// Create a binary file with proper MIME type\nreturn [{\n  json: {\n    html: htmlContent,\n    fileName: fileName,  // Pass filename forward if needed\n    businessName: businessName\n  },\n  binary: {\n    data: {\n      data: Buffer.from(htmlContent).toString('base64'),\n      mimeType: 'text/html',\n      fileName: fileName,\n      fileExtension: 'html'\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2144,
+        -96
+      ],
+      "id": "5a3135bd-cdb1-46e7-bacc-346e0723a9e8",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "website generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "image urls",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "image urls": {
+      "main": [
+        [
+          {
+            "node": "downloader1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "website generator": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "downloader1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "image urls1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "image urls1": {
+      "main": [
+        [
+          {
+            "node": "releavant images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "releavant images": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compression": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript4": {
+      "main": [
+        [
+          {
+            "node": "Create a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a file": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Compression",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "4bb13cbb-d0bf-4959-b1c1-58e2bace1325",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "28cef6033420e4cfcaf0720b26bf54ddabbcbf988ce7067c7f502a2dd06d37fa"
+  },
+  "id": "BSGHFE9mOL2HPnjR",
+  "tags": []
+}
