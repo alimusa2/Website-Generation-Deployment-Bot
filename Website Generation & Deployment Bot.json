@@ -370,8 +370,7 @@
           "__rl": true,
           "value": "my_websites",
           "mode": "list",
-          "cachedResultName": "my_websites",
-          "cachedResultUrl": "https://github.com/alimusa2/my_websites"
+          
         },
         "filePath": "={{ $json.fileName }}",
         "fileContent": "={{ $json.fileContent }}",
